@@ -14,6 +14,9 @@ from cadastro.models.produtos import Cadastro_itens_sped
 from cadastro.models.empresa import Empresa
 from typing import Any, Type    
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 class ArquivoServices:
 
@@ -209,7 +212,8 @@ class ArquivoServices:
             return True
 
         except Exception as e:
-            return HttpResponse(f'Erro fazer as consulta no banco: {str(e)}', status=500)
+            logger.error(f'Erro ao fazer consulta no banco {str(e)}')
+            return HttpResponse('Erro ao realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
 
 
     def industrial_or_industrial_and_comercial(self):
@@ -226,37 +230,62 @@ class ArquivoServices:
                 response["Content-Disposition"] = (
                     f'attachment; filename="arquivo_ecredac_industrial_comercial_de_{self.mes_sped} de {self.data_sped.year}.txt"'
                 )
-            for r_job in self.registros_job:
-                campo = ["0000"] + list[Any](r_job)
-                linha = (
-                    "|".join("" if c is None else str(c) for c in campo) + "|"
-                )
-                response.write(linha + "\n")
+            
+            # ABERTURA DO ARQUIVO DIGITAL E IDENTIFICAÇÃO DA EMPRESA
+            try:
+                for r_job in self.registros_job:
+                    campo = ["0000"] + list[Any](r_job)
+                    linha = (
+                        "|".join("" if c is None else str(c) for c in campo) + "|"
+                    )
+                    response.write(linha + "\n")
+            except Exception as e:
+                logger.error(f'Erro ao criar registro 0000 (Abertura do arquivo digital e identificação da empresa): {str(e)}')
+                return HttpResponse('Não foi possível realizar a sua solicitação. Favor entrar em contato com suporte.', status=500)
 
-            for r_indicador in self.registro_indicador:
-                campo = ["0001"] + list[Any](r_indicador)
-                linha = (
-                    "|".join("" if c is None else str(c) for c in campo)
-                )
-                response.write(linha + "\n")
+            # ABERTURA DO BLOCO 0
+            try:
+                for r_indicador in self.registro_indicador:
+                    campo = ["0001"] + list[Any](r_indicador)
+                    linha = (
+                        "|".join("" if c is None else str(c) for c in campo)
+                    )
+                    response.write(linha + "\n")
+            except Exception as e:
+                logger.error(f'Erro ao criar registro 0001 (Abertura do bloco 0: {str(e)}')
+                return HttpResponse('Não foi possível realizar a sua solicitação. Favor entrar em contato com suporte.', status=500)
+            
+            # CADASTRO DE PARTICIPANTES
+            try:
+                for r_part in self.registro_part:
+                    campo = ["0150"] + list[Any](r_part)
+                    linha = (
+                        "|".join("" if c is None else str(c) for c in campo) + "|"
+                    )
+                    response.write(linha + "\n")
+            except Exception as e:
+                logger.error(f'Erro ao criar registro 0150 (Cadastro de participantes): {str(e)}')
+                return HttpResponse('Não foi possível realizar a sua solicitação. Favor entrar em contato com suporte.', status=500)
 
-            for r_part in self.registro_part:
-                campo = ["0150"] + list[Any](r_part)
-                linha = (
-                    "|".join("" if c is None else str(c) for c in campo) + "|"
-                )
-                response.write(linha + "\n")
+            try:
+                for r_prod in self.registro_prod:
+                    campo = ["0200"] + list[Any](r_prod)
+                    linha = (
+                        "|".join("" if c is None else str(c) for c in campo) + "|"
+                    )
+                    response.write(linha + "\n")
+            except Exception as e:
+                logger.error(f'Erro ao criar regitro 0200 (cadastro geral dos itens): {str(e)}')
+                return HttpResponse('Não foi possível realizar a sua solicitação. Favor entrar em contato com suporte.', status=500)
 
-            for r_prod in self.registro_prod:
-                campo = ["0200"] + list[Any](r_prod)
-                linha = (
-                    "|".join("" if c is None else str(c) for c in campo) + "|"
-                )
+            # ABERTURA DO BLOCO 5
+            try:
+                campo = ["5001", "0"] + [None]
+                linha = "|" + "|".join("" if c is None else str(c) for c in campo)
                 response.write(linha + "\n")
-
-            campo = ["5001", "0"] + [None]
-            linha = "|" + "|".join("" if c is None else str(c) for c in campo)
-            response.write(linha + "\n")
+            except Exception as e:
+                logger.error(f'Erro ao criar registro 5001 (Abertura do bloco 5) {str(e)}')
+                return HttpResponse('Não foi possível realizar a sua solicitação. Favor entrar em contato com suporte.', status=500)                
 
             # FICHA 1A
             try:
@@ -350,7 +379,8 @@ class ArquivoServices:
                         else:
                             continue
             except Exception as e:
-                return HttpResponse(f"# Erro na FICHA 1A: {str(e)}\n")
+                logger.error(f'Erro ao criar registro da Ficha 1A: {str(e)}')
+                return HttpResponse("Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.", status=500)
 
 
             # FICHA 1B
@@ -373,7 +403,8 @@ class ArquivoServices:
                 )
                 response.write(linha + "\n")
             except Exception as e:
-                return HttpResponse(f"# Erro na FICHA 1B: {str(e)}\n")
+                logger.error(f'Erro ao criar registro da Ficha 1B: {str(e)}')
+                return HttpResponse("Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.", status=500)
 
 
             # FICHA 1C
@@ -396,7 +427,8 @@ class ArquivoServices:
                 )
                 response.write(linha + "\n")
             except Exception as e:
-                return HttpResponse(f"# Erro na FICHA 1C: {str(e)}\n")
+                logger.error(f'Erro ao criar registro da Ficha 1C: {str(e)}')
+                return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
 
             # FICHA 1D
             try:
@@ -412,8 +444,8 @@ class ArquivoServices:
                 )
                 response.write(linha + "\n")
             except Exception as e:
-                return HttpResponse(f"# Erro na FICHA 1D: {str(e)}\n")
-
+                logger.error(f'Erro ao criar registro da Ficha 1D: {str(e)}')
+                return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
 
             # FICHA 2A
             try:
@@ -484,7 +516,8 @@ class ArquivoServices:
                         continue
 
             except Exception as e:
-                return HttpResponse(f"# Erro na FICHA 2A: {str(e)}\n")
+                logger.error(f'Erro ao criar registro da Ficha 2A: {str(e)}')
+                return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
 
             try:
                 contagem = 0
@@ -595,7 +628,8 @@ class ArquivoServices:
                         else:
                             continue
             except Exception as e:
-                return HttpResponse(f"# Erro na FICHA 2A (cont extra 5160): {str(e)}\n")
+                logger.error(f'Erro ao criar registro da Ficha 2A: {str(e)}')
+                return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
             
             # FICHA 2B
             try:
@@ -719,7 +753,8 @@ class ArquivoServices:
                     else:
                         continue
             except Exception as e:
-                return HttpResponse(f"# Erro na FICHA 2B: {str(e)}\n")
+                logger.error(f'Erro ao criar registro da Ficha 2B: {str(e)}')
+                return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
 
             # FICHA 2C
             try:
@@ -745,7 +780,8 @@ class ArquivoServices:
                         "|".join("" if c is None else str(c) for c in campo)
                     )
             except Exception as e:
-                return HttpResponse(f"# Erro na FICHA 2C: {str(e)}\n")
+                logger.error(f'Error ao criar o registro da FICHA 2C: {str(e)}')
+                return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
 
             # FICHA 2E
             try:
@@ -763,12 +799,12 @@ class ArquivoServices:
 
                 response.write(linha + "\n")  
             except Exception as e:
-                return HttpResponse(f"# Erro na FICHA 2E: {str(e)}\n")
+                logger.error(f'Erro ao criar registro da Ficha 2E: {str(e)}')
+                return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
 
             # FICHA 3A
             try:
                 for r_5310 in self.dados_k230:
-                    print('entrou aqui')
                     id_230 = r_5310[0]
                     data_final = r_5310[3]
                     data_inicial = r_5310[5]
@@ -816,7 +852,8 @@ class ArquivoServices:
                     else:
                         continue
             except Exception as e:
-                return HttpResponse(f"# Erro na FICHA 3A: {str(e)}\n")
+                logger.error(f'Erro ao criar registro da Ficha 3A: {str(e)}')
+                return HttpResponse('Não foi possível realizar a sua solicitação. Favor entrar em contato com suporte.', status=500)
 
             # FICHA 3B
             try:
@@ -852,7 +889,8 @@ class ArquivoServices:
                         )
                     response.write(linha + "\n")
             except Exception as e:
-                return HttpResponse(f"# Erro na FICHA 3B: {str(e)}\n")
+                logger.error(f'Erro ao criar registro da Ficha 3B: {str(e)}')
+                return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
 
             # FICHA 3C
             try:
@@ -880,7 +918,8 @@ class ArquivoServices:
                     )
                 response.write(linha + "\n")
             except Exception as e:
-                return HttpResponse(f"# Erro na FICHA 3C: {str(e)}\n")
+                logger.error(f'Erro ao criar registro da Ficha 3C: {str(e)}')
+                return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
 
             # FICHA 5B
             try:
@@ -896,11 +935,68 @@ class ArquivoServices:
                     )
                 response.write(linha + "\n")
             except Exception as e:
-                return HttpResponse(f"# Erro na FICHA 5B: {str(e)}\n")
+                logger.error(f'Erro ao criar registro da Ficha 5B: {str(e)}')
+                return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
 
+            # ENCERRAMENTO DO BLOCO 5
+            try:
+                campo = ["5990"] + [None] * 1
+                linha = (
+                    "|".join("" if c is None else str(c) for c in campo)
+                )
+                response.write(linha + "\n")
+            except Exception as e:
+                logger.error(f'Erro ao criar regsitro do ENCERRAMENTO DO BLOCO 5: {str(e)}')
+                return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
+
+            # ABERTURA DO BLOCO 9
+            try:
+                campo = ["9001"] + [None] * 1
+                linha = (
+                    "|".join("" if c is None else str(c) for c in campo)
+                )
+                response.write(linha + "\n")
+            except Exception as e:
+                logger.error(f'Erro ao criar regsitro da ABERTURA DO BLOCO 9: {str(e)}')
+                return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
+            
+            # REGISTRO DO ARQUIVO 
+            try:
+                campo = ["9900"] + [None] * 2
+                linha = (
+                    "|".join("" if c is None else str(c) for c in campo)
+                )
+                response.write(linha + "\n")
+            except Exception as e:
+                logger.error(f'Erro ao criar registro do REGISTRO DO ARQUIVO: {str(e)}')
+                return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
+
+            # ENCERRAMENTO DO BLOCO 9
+            try:
+                campo = ["9990"] + [None] * 1
+                linha = (
+                    "|".join("" if c is None else str(c) for c in campo)
+                )
+                response.write(linha + "\n")
+            except Exception as e:
+                logger.error(f'Erro ao criar registro do ENCERRAMENTO DO BLOCO 9: {str(e)}')
+                return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
+
+            # ENCERRAMENTO DO ARQUIVO DIGITAL
+            try:
+                campo = ["9999"] + [None] * 1
+                linha = (
+                    "|".join("" if c is None else str(c) for c in campo)
+                )
+                response.write(linha + "\n")
+            except Exception as e:
+                logger.error(f'Erro ao criar registro do ENCERRAMENTO DO ARQUIVO DIGITAL: {str(e)}')
+                return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
+            
             return response
         except Exception as e:
-            return HttpResponse('Erro ao gerar aquivo')
+            logger.error(f'Erro ao gerar arquivo: {str(e)}')
+            return HttpResponse('Erro ao gerar aquivo. Favor entrar em contato com o suporte', status=500)
 
     def comercial(self):
         
@@ -911,192 +1007,287 @@ class ArquivoServices:
             f'attachment; filename="arquivo_ecredac_comercial_de_{self.mes_sped} de {self.data_sped.year}.txt"'
         )
 
-        for r_job in self.registros_job:
-            campo = ["0000"] + list[Any](r_job)
-            linha = (
-                "|".join("" if c is None else str(c) for c in campo) + "|"
-            )
-            response.write(linha + "\n")
+        # ABERTURA DO ARQUIVO DIGITAL E IDENTIFICAÇÃO DA EMPRESA
+        try:
+            for r_job in self.registros_job:
+                campo = ["0000"] + list[Any](r_job)
+                linha = (
+                    "|".join("" if c is None else str(c) for c in campo) + "|"
+                )
+                response.write(linha + "\n")
+        except Exception as e:
+            logger.error(f'Erro ao criar registro 0000 (Abertura do arquivo digital e identificação da empresa): {str(e)}')
+            return HttpResponse('Não foi possível realizar a sua solicitação. Favor entrar em contato com suporte.', status=500)
 
-        for r_indicador in self.registro_indicador:
-            campo = ["0001"] + list[Any](r_indicador)
-            linha = (
-                "|".join("" if c is None else str(c) for c in campo)
-            )
-            response.write(linha + "\n")
+        # ABERTURA DO BLOCO 0
+        try:
+            for r_indicador in self.registro_indicador:
+                campo = ["0001"] + list[Any](r_indicador)
+                linha = (
+                    "|".join("" if c is None else str(c) for c in campo)
+                )
+                response.write(linha + "\n")
+        except Exception as e:
+            logger.error(f'Erro ao criar registro 0001 (Abertura do bloco 0: {str(e)}')
+            return HttpResponse('Não foi possível realizar a sua solicitação. Favor entrar em contato com suporte.', status=500)
+        
+        # CADASTRO DE PARTICIPANTES
+        try:
+            for r_part in self.registro_part:
+                campo = ["0150"] + list[Any](r_part)
+                linha = (
+                    "|".join("" if c is None else str(c) for c in campo) + "|"
+                )
+                response.write(linha + "\n")
+        except Exception as e:
+            logger.error(f'Erro ao criar registro 0150 (Cadastro de participantes): {str(e)}')
+            return HttpResponse('Não foi possível realizar a sua solicitação. Favor entrar em contato com suporte.', status=500)
 
-        for r_part in self.registro_part:
-            campo = ["0150"] + list[Any](r_part)
-            linha = (
-                "|".join("" if c is None else str(c) for c in campo) + "|"
-            )
-            response.write(linha + "\n")
+        try:
+            for r_prod in self.registro_prod:
+                campo = ["0200"] + list[Any](r_prod)
+                linha = (
+                    "|".join("" if c is None else str(c) for c in campo) + "|"
+                )
+                response.write(linha + "\n")
+        except Exception as e:
+            logger.error(f'Erro ao criar regitro 0200 (cadastro geral dos itens): {str(e)}')
+            return HttpResponse('Não foi possível realizar a sua solicitação. Favor entrar em contato com suporte.', status=500)
 
-        for r_prod in self.registro_prod:
-            campo = ["0200"] + list[Any](r_prod)
-            linha = (
-                "|".join("" if c is None else str(c) for c in campo) + "|"
-            )
+        # ABERTURA DO BLOCO 5
+        try:
+            campo = ["5001", "0"] + [None]
+            linha = "|" + "|".join("" if c is None else str(c) for c in campo)
             response.write(linha + "\n")
-
-        campo = ["5001", "0"] + [None]
-        linha = "|".join("" if c is None else str(c) for c in campo)
-        response.write(linha + "\n")
+        except Exception as e:
+            logger.error(f'Erro ao criar registro 5001 (Abertura do bloco 5): {str(e)}')
+            return HttpResponse('Não foi possível realizar a sua solicitação. Favor entrar em contato com suporte.', status=500)      
 
         # FICHA 1A
         contagem = 0
-        for r_5015 in self.registros_5015:
+        try:
+            for r_5015 in self.registros_5015:
 
-            campo = ["5010"] + [None] * 8
+                campo = ["5010"] + [None] * 8
+                linha = (
+                    "|".join("" if c is None else str(c) for c in campo)
+                )
+                
+                response.write(linha + "\n")
+
+                id_nota = r_5015[0]
+                data = r_5015[1].strftime("%d%m%Y") if r_5015[0] else ""
+                tipo = r_5015[2]
+                nota = r_5015[3]
+                tipo_documento = r_5015[4]
+                serie_documento = r_5015[5]
+                numero_documento = r_5015[6]
+                part_titular = r_5015[7]
+
+                if self.empresa_id:
+                    self.cod_part = (
+                        Participantes.objects.filter(id=part_titular, empresa_id=self.empresa_id)
+                        .values_list("cod_part", flat=True)
+                        .first()
+                    )
+
+                # Busca todos os itens da nota, independente do tipo de nota (importação ou não)
+                if self.data_sped and self.empresa_id:
+                    self.itens_nota = Produtos_notas.objects.filter(
+                        nota_titular=id_nota, data_inicio_sped=self.data_sped, empresa_id=self.empresa_id
+                    ).values_list(
+                        "cfop_prod",
+                        "tipo_nota",
+                        "codigo_prod",
+                        "quantidade_prod",
+                        "valor_icms",
+                        "valor_ipi",
+                    )
+
+                codigos_ja_usados_5015 = set()
+                for item in self.itens_nota:
+                    codigo_prod = item[2]
+                    chave = (nota, codigo_prod) # 1234, 1-1234
+                    if chave not in codigos_ja_usados_5015:
+                        codigos_ja_usados_5015.add(chave)
+                        cfop = item[0]
+                        tipo_nota = item[1]
+                        quantidade = f"{float(item[3]):.2f}".replace(".", ",")
+                        # Ajuste: só converte valor_icms se não for None, senão retorna string vazia para o campo
+                        valor_icms = (
+                            "" if item[4] is None else str(item[4]).replace(".", ",")
+                        )
+                        valor_ipi = str(item[5]).replace(".", ",")
+                        
+                        # 'tipo_inf' será '0' para entradas, '1' para saídas
+                        tipo_inf = "0" if tipo_nota == "Entrada" else "1"
+
+                        concatenacao = f"{tipo}{nota}"
+
+                        campo = [
+                            "5015",
+                            contagem,
+                            data,
+                            concatenacao,
+                            tipo_documento,
+                            serie_documento,
+                            nota,
+                            cfop,
+                            numero_documento,
+                            self.cod_part,
+                            "",
+                            tipo_inf,
+                            codigo_prod,
+                            quantidade,
+                            "",
+                            valor_icms,
+                        ]
+                        linha = (
+                            "|".join("" if c is None else str(c) for c in campo)
+                        )
+                        response.write(linha + "\n")
+                        contagem += 1
+
+                        campo = ["5020", valor_ipi, "0"]
+                        linha = (
+                        "|".join("" if c is None else str(c) for c in campo)
+                        )
+                        response.write(linha + "\n")
+                    else:
+                        continue
+        except Exception as e:
+            logger.error(f'Erro ao criar registro da Ficha 1A: {str(e)}')
+            return HttpResponse('Não foi possível realizar a sua solicitação. Favor entrar em contato com suporte.', status=500)
+
+        # FICHA 1C
+        try:
+            campo = ["5080"] + [None] * 1
             linha = (
                 "|".join("" if c is None else str(c) for c in campo)
             )
-            
             response.write(linha + "\n")
 
-            id_nota = r_5015[0]
-            data = r_5015[1].strftime("%d%m%Y") if r_5015[0] else ""
-            tipo = r_5015[2]
-            nota = r_5015[3]
-            tipo_documento = r_5015[4]
-            serie_documento = r_5015[5]
-            numero_documento = r_5015[6]
-            part_titular = r_5015[7]
+            campo = ["5085"] + [None] * 15
+            linha = (
+                "|".join("" if c is None else str(c) for c in campo)
+            )
+            response.write(linha + "\n")
 
-            if self.empresa_id:
-                self.cod_part = (
-                    Participantes.objects.filter(id=part_titular, empresa_id=self.empresa_id)
-                    .values_list("cod_part", flat=True)
-                    .first()
-                )
-
-            # Busca todos os itens da nota, independente do tipo de nota (importação ou não)
-            if self.data_sped and self.empresa_id:
-                self.itens_nota = Produtos_notas.objects.filter(
-                    nota_titular=id_nota, data_inicio_sped=self.data_sped, empresa_id=self.empresa_id
-                ).values_list(
-                    "cfop_prod",
-                    "tipo_nota",
-                    "codigo_prod",
-                    "quantidade_prod",
-                    "valor_icms",
-                    "valor_ipi",
-                )
-
-            codigos_ja_usados_5015 = set()
-            for item in self.itens_nota:
-                codigo_prod = item[2]
-                chave = (nota, codigo_prod) # 1234, 1-1234
-                if chave not in codigos_ja_usados_5015:
-                    codigos_ja_usados_5015.add(chave)
-                    cfop = item[0]
-                    tipo_nota = item[1]
-                    quantidade = f"{float(item[3]):.2f}".replace(".", ",")
-                    # Ajuste: só converte valor_icms se não for None, senão retorna string vazia para o campo
-                    valor_icms = (
-                        "" if item[4] is None else str(item[4]).replace(".", ",")
-                    )
-                    valor_ipi = str(item[5]).replace(".", ",")
-                    
-                    # 'tipo_inf' será '0' para entradas, '1' para saídas
-                    tipo_inf = "0" if tipo_nota == "Entrada" else "1"
-
-                    concatenacao = f"{tipo}{nota}"
-
-                    campo = [
-                        "5015",
-                        contagem,
-                        data,
-                        concatenacao,
-                        tipo_documento,
-                        serie_documento,
-                        nota,
-                        cfop,
-                        numero_documento,
-                        self.cod_part,
-                        "",
-                        tipo_inf,
-                        codigo_prod,
-                        quantidade,
-                        "",
-                        valor_icms,
-                    ]
-                    linha = (
-                        "|".join("" if c is None else str(c) for c in campo)
-                    )
-                    response.write(linha + "\n")
-                    contagem += 1
-
-                    campo = ["5020", valor_ipi, "0"]
-                    linha = (
-                    "|".join("" if c is None else str(c) for c in campo)
-                    )
-                    response.write(linha + "\n")
-                else:
-                    continue
-
-        # FICHA 1C
-        campo = ["5080"] + [None] * 1
-        linha = (
-            "|".join("" if c is None else str(c) for c in campo)
-        )
-        response.write(linha + "\n")
-
-        campo = ["5085"] + [None] * 15
-        linha = (
-            "|".join("" if c is None else str(c) for c in campo)
-        )
-        response.write(linha + "\n")
-
-        campo = ["5090"] + [None] * 1
-        linha = (
-            "|".join("" if c is None else str(c) for c in campo)
-        )
-        response.write(linha + "\n")
+            campo = ["5090"] + [None] * 1
+            linha = (
+                "|".join("" if c is None else str(c) for c in campo)
+            )
+            response.write(linha + "\n")
+        except Exception as e:
+            logger.error(f'Erro ao criar o registro da Ficha 1C: {str(e)}')
+            return HttpResponse('Não foi possível realizar a sua solicitação. Favor entrar em contato com suporte.', status=500)
 
         # FICHA 1D
-        campo = ["5100"] + [None] * 3
-        linha = (
-            "|".join("" if c is None else str(c) for c in campo)
-        )
-        response.write(linha + "\n")
+        try:
+            campo = ["5100"] + [None] * 3
+            linha = (
+                "|".join("" if c is None else str(c) for c in campo)
+            )
+            response.write(linha + "\n")
 
-        campo = ["5105"] + [None] * 12
-        linha = (
-            "|".join("" if c is None else str(c) for c in campo)
-        )
-        response.write(linha + "\n")
+            campo = ["5105"] + [None] * 12
+            linha = (
+                "|".join("" if c is None else str(c) for c in campo)
+            )
+            response.write(linha + "\n")
+        except Exception as e:
+            logger.error(f'Erro ao criar registro da Ficha 1D: {str(e)}')
+            return HttpResponse('Não foi possível realizar a sua solicitação. Favor entrar em contato com suporte.', status=500)
 
         # FICHA 3B
-        campo = ["5360"] + [None] * 7
-        linha = (
-            "|".join("" if c is None else str(c) for c in campo)
-            )
-        response.write(linha + "\n")
+        try:
+            campo = ["5360"] + [None] * 7
+            linha = (
+                "|".join("" if c is None else str(c) for c in campo)
+                )
+            response.write(linha + "\n")
 
-        campo = ["5365"] + [None] * 17
-        linha = (
-            "|".join("" if c is None else str(c) for c in campo)
-            )
-        response.write(linha + "\n")
+            campo = ["5365"] + [None] * 17
+            linha = (
+                "|".join("" if c is None else str(c) for c in campo)
+                )
+            response.write(linha + "\n")
 
-        campo = ["5370"] + [None] * 2
-        linha = (
-            "|".join("" if c is None else str(c) for c in campo)
-            )
-        response.write(linha + "\n")
+            campo = ["5370"] + [None] * 2
+            linha = (
+                "|".join("" if c is None else str(c) for c in campo)
+                )
+            response.write(linha + "\n")
 
-        campo = ["5375"] + [None] * 4
-        linha = (
-            "|".join("" if c is None else str(c) for c in campo)
-            )
-        response.write(linha + "\n")
+            campo = ["5375"] + [None] * 4
+            linha = (
+                "|".join("" if c is None else str(c) for c in campo)
+                )
+            response.write(linha + "\n")
 
-        campo = ["5380"] + [None] * 3
-        linha = (
-            "|".join("" if c is None else str(c) for c in campo)
+            campo = ["5380"] + [None] * 3
+            linha = (
+                "|".join("" if c is None else str(c) for c in campo)
+                )
+            response.write(linha + "\n")
+        except Exception as e:
+            logger.error(f'Erro ao criar registro da Ficha 3B: {str(e)}')
+            return HttpResponse('Não foi possível realizar a sua solicitação. Favor entrar em contato com suporte.', status=500)
+
+        # ENCERRAMENTO DO BLOCO 5
+        try:
+            campo = ["5990"] + [None] * 1
+            linha = (
+                "|".join("" if c is None else str(c) for c in campo)
             )
-        response.write(linha + "\n")
+            response.write(linha + "\n")
+        except Exception as e:
+            logger.error(f'Erro no ENCERRAMENTO DO BLOCO 5: {str(e)}')
+            return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
+
+        # ABERTURA DO BLOCO 9
+        try:
+            campo = ["9001"] + [None] * 1
+            linha = (
+                "|".join("" if c is None else str(c) for c in campo)
+            )
+            response.write(linha + "\n")
+        except Exception as e:
+            logger.error(f'Erro na ABERTURA DO BLOCO 9: {str(e)}')
+            return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
+        
+        # REGISTRO DO ARQUIVO 
+        try:
+            campo = ["9900"] + [None] * 2
+            linha = (
+                "|".join("" if c is None else str(c) for c in campo)
+            )
+            response.write(linha + "\n")
+        except Exception as e:
+            logger.error(f'Erro no REGISTRO DO ARQUIVO: {str(e)}')
+            return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
+
+        # ENCERRAMENTO DO BLOCO 9
+        try:
+            campo = ["9990"] + [None] * 1
+            linha = (
+                "|".join("" if c is None else str(c) for c in campo)
+            )
+            response.write(linha + "\n")
+        except Exception as e:
+            logger.error(f'Erro no ENCERRAMENTO DO BLOCO 9: {str(e)}')
+            return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
+
+        # ENCERRAMENTO DO ARQUIVO DIGITAL
+        try:
+            campo = ["9999"] + [None] * 1
+            linha = (
+                "|".join("" if c is None else str(c) for c in campo)
+            )
+            response.write(linha + "\n")
+        except Exception as e:
+            logger.error(f'Erro no ENCERRAMENTO DO ARQUIVO DIGITAL: {str(e)}')
+            return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
 
         return response
 
