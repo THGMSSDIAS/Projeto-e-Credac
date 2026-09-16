@@ -31,7 +31,7 @@ class ArquivoServices:
         self.registros_5015 = []
         
         if not self.empresa_obj:
-            return HttpResponse('Nenhuma movimentação concluída para a empresa.', status=400)
+            return HttpResponse('Nenhuma movimentação concluída para a empresa.', status=401)
         
         self.mes_obj = ValidacaoDataConcluida.objects.filter(mes_sped=self.mes, empresa_id=self.empresa_id).first()
 
@@ -231,6 +231,7 @@ class ArquivoServices:
                     f'attachment; filename="arquivo_ecredac_industrial_comercial_de_{self.mes_sped} de {self.data_sped.year}.txt"'
                 )
             
+            contagem_bloco_0 = 0
             # ABERTURA DO ARQUIVO DIGITAL E IDENTIFICAÇÃO DA EMPRESA
             try:
                 for r_job in self.registros_job:
@@ -239,6 +240,8 @@ class ArquivoServices:
                         "|".join("" if c is None else str(c) for c in campo) + "|"
                     )
                     response.write(linha + "\n")
+                    contagem_bloco_0+=1
+
             except Exception as e:
                 logger.error(f'Erro ao criar registro 0000 (Abertura do arquivo digital e identificação da empresa): {str(e)}')
                 return HttpResponse('Não foi possível realizar a sua solicitação. Favor entrar em contato com suporte.', status=500)
@@ -251,6 +254,8 @@ class ArquivoServices:
                         "|".join("" if c is None else str(c) for c in campo)
                     )
                     response.write(linha + "\n")
+                    contagem_bloco_0+=1
+
             except Exception as e:
                 logger.error(f'Erro ao criar registro 0001 (Abertura do bloco 0: {str(e)}')
                 return HttpResponse('Não foi possível realizar a sua solicitação. Favor entrar em contato com suporte.', status=500)
@@ -263,6 +268,8 @@ class ArquivoServices:
                         "|".join("" if c is None else str(c) for c in campo) + "|"
                     )
                     response.write(linha + "\n")
+                    contagem_bloco_0+=1
+
             except Exception as e:
                 logger.error(f'Erro ao criar registro 0150 (Cadastro de participantes): {str(e)}')
                 return HttpResponse('Não foi possível realizar a sua solicitação. Favor entrar em contato com suporte.', status=500)
@@ -274,15 +281,31 @@ class ArquivoServices:
                         "|".join("" if c is None else str(c) for c in campo) + "|"
                     )
                     response.write(linha + "\n")
+                    contagem_bloco_0+=1
+
             except Exception as e:
                 logger.error(f'Erro ao criar regitro 0200 (cadastro geral dos itens): {str(e)}')
                 return HttpResponse('Não foi possível realizar a sua solicitação. Favor entrar em contato com suporte.', status=500)
 
+            # ENCERRAMENTO DO BLOCO 0
+            try:
+                campo = ["0990", contagem_bloco_0]
+                linha = (
+                    "|".join("" if c is None else str(c) for c in campo)
+                )
+                response.write(linha + "\n")
+            except Exception as e:
+                logger.error(f'Erro ao criar regitro 0990 (Encerramento do bloco 0): {str(e)}')
+                return HttpResponse('Não foi possível realizar a sua solicitação. Favor entrar em contato com suporte.', status=500)
+
+            contagem_bloco_5 = 0
             # ABERTURA DO BLOCO 5
             try:
-                campo = ["5001", "0"] + [None]
-                linha = "|" + "|".join("" if c is None else str(c) for c in campo)
+                campo = ["5001", "0"]
+                linha = "|".join("" if c is None else str(c) for c in campo)
                 response.write(linha + "\n")
+                contagem_bloco_5+=1
+
             except Exception as e:
                 logger.error(f'Erro ao criar registro 5001 (Abertura do bloco 5) {str(e)}')
                 return HttpResponse('Não foi possível realizar a sua solicitação. Favor entrar em contato com suporte.', status=500)                
@@ -297,6 +320,7 @@ class ArquivoServices:
                         "|".join("" if c is None else str(c) for c in campo)
                     )
                     response.write(linha + "\n")
+                    contagem_bloco_5+=1
 
                     id_nota = r_5015[0]
                     data = r_5015[1].strftime("%d%m%Y") if r_5015[0] else ""
@@ -376,6 +400,8 @@ class ArquivoServices:
                             "|".join("" if c is None else str(c) for c in campo)
                             )
                             response.write(linha + "\n")
+                            contagem_bloco_5+=1
+
                         else:
                             continue
             except Exception as e:
@@ -390,18 +416,22 @@ class ArquivoServices:
                             "|".join("" if c is None else str(c) for c in campo)
                         )
                 response.write(linha + "\n")
+                contagem_bloco_5+=1
 
                 campo = ["5065"] + [None] * 13
                 linha = (
                         "|".join("" if c is None else str(c) for c in campo)
                     )
                 response.write(linha + "\n")
+                contagem_bloco_5+=1
 
                 campo = ["5070"] + [None] * 2
                 linha = (
                     "|".join("" if c is None else str(c) for c in campo)
                 )
                 response.write(linha + "\n")
+                contagem_bloco_5+=1
+
             except Exception as e:
                 logger.error(f'Erro ao criar registro da Ficha 1B: {str(e)}')
                 return HttpResponse("Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.", status=500)
@@ -414,18 +444,22 @@ class ArquivoServices:
                     "|".join("" if c is None else str(c) for c in campo)
                 )
                 response.write(linha + "\n")
+                contagem_bloco_5+=1
 
                 campo = ["5085"] + [None] * 15
                 linha = (
                     "|".join("" if c is None else str(c) for c in campo)
                 )
                 response.write(linha + "\n")
+                contagem_bloco_5+=1
 
                 campo = ["5090"] + [None] * 1
                 linha = (
                     "|".join("" if c is None else str(c) for c in campo)
                 )
                 response.write(linha + "\n")
+                contagem_bloco_5+=1
+
             except Exception as e:
                 logger.error(f'Erro ao criar registro da Ficha 1C: {str(e)}')
                 return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
@@ -437,12 +471,15 @@ class ArquivoServices:
                     "|".join("" if c is None else str(c) for c in campo)
                 )
                 response.write(linha + "\n")
+                contagem_bloco_5+=1
 
                 campo = ["5105"] + [None] * 12
                 linha = (
                     "|".join("" if c is None else str(c) for c in campo)
                 )
                 response.write(linha + "\n")
+                contagem_bloco_5+=1
+
             except Exception as e:
                 logger.error(f'Erro ao criar registro da Ficha 1D: {str(e)}')
                 return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
@@ -482,6 +519,7 @@ class ArquivoServices:
                             "|".join("" if c is None else str(c) for c in campo )
                         )
                         response.write(linha + "\n")
+                        contagem_bloco_5+=1
 
                         codigos_ja_usados_r5155 = []
                         for dados in dados_insumos:
@@ -510,6 +548,7 @@ class ArquivoServices:
                                     "|".join("" if c is None else str(c) for c in campo)
                                 )
                                 response.write(linha + "\n")
+                                contagem_bloco_5+=1
                             else:
                                 continue
                     else:
@@ -578,6 +617,7 @@ class ArquivoServices:
                             )
                             response.write(linha + "\n")
                             contagem +=1
+                            contagem_bloco_5+=1
 
                             # Busca os insumos SEM chamar .list (era .values_list, veja contexto)
                             if self.empresa_id:
@@ -625,6 +665,7 @@ class ArquivoServices:
                                 )
                                 response.write(linha + "\n")
                                 contagem += 1
+                                contagem_bloco_5+=1
                         else:
                             continue
             except Exception as e:
@@ -661,6 +702,7 @@ class ArquivoServices:
                             "|".join("" if c is None else str(c) for c in campo) + "|"
                         )
                         response.write(linha + "\n")
+                        contagem_bloco_5+=1
                     else:
                         continue
                     
@@ -696,6 +738,7 @@ class ArquivoServices:
                                 "|".join("" if c is None else str(c) for c in campo)
                             )
                             response.write(linha + "\n")
+                            contagem_bloco_5+=1
                         else:
                             continue
 
@@ -750,6 +793,7 @@ class ArquivoServices:
                         )
                         response.write(linha + "\n")
                         c +=1
+                        contagem_bloco_5+=1
                     else:
                         continue
             except Exception as e:
@@ -767,18 +811,25 @@ class ArquivoServices:
                     )
                     
                     response.write(linha + "\n")
+                    contagem_bloco_5+=1
+
 
                     campo = ["5185"] + [None] * 12
                     linha = (
                         "|".join("" if c is None else str(c) for c in campo)
                     )
 
-                    response.write(linha + "\n")            
+                    response.write(linha + "\n")
+                    contagem_bloco_5+=1
+
 
                     campo = ["5190"] + [None] * 3
                     linha = (
                         "|".join("" if c is None else str(c) for c in campo)
                     )
+                    response.write(linha + "\n")
+                    contagem_bloco_5+=1
+
             except Exception as e:
                 logger.error(f'Error ao criar o registro da FICHA 2C: {str(e)}')
                 return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
@@ -790,7 +841,9 @@ class ArquivoServices:
                     "|".join("" if c is None else str(c) for c in campo)
                 )
 
-                response.write(linha + "\n")  
+                response.write(linha + "\n") 
+                contagem_bloco_5+=1
+
 
                 campo = ["5215"] + [None] * 13
                 linha = (
@@ -798,6 +851,8 @@ class ArquivoServices:
                 )
 
                 response.write(linha + "\n")  
+                contagem_bloco_5+=1
+
             except Exception as e:
                 logger.error(f'Erro ao criar registro da Ficha 2E: {str(e)}')
                 return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
@@ -847,6 +902,7 @@ class ArquivoServices:
                                     "|".join("" if c is None else str(c) for c in campo)
                                 )
                                 response.write(linha + "\n")
+                                contagem_bloco_5+=1
                         else:
                             continue
                     else:
@@ -864,30 +920,36 @@ class ArquivoServices:
                         "|".join("" if c is None else str(c) for c in campo)
                         )
                     response.write(linha + "\n")
+                    contagem_bloco_5+=1
 
                     campo = ["5365"] + [None] * 17
                     linha = (
                         "|".join("" if c is None else str(c) for c in campo)
                         )
                     response.write(linha + "\n")
+                    contagem_bloco_5+=1
 
                     campo = ["5370"] + [None] * 2
                     linha = (
                         "|".join("" if c is None else str(c) for c in campo)
                         )
                     response.write(linha + "\n")
+                    contagem_bloco_5+=1
 
                     campo = ["5375"] + [None] * 4
                     linha = (
                         "|".join("" if c is None else str(c) for c in campo)
                         )
                     response.write(linha + "\n")
+                    contagem_bloco_5+=1
 
                     campo = ["5380"] + [None] * 3
                     linha = (
                         "|".join("" if c is None else str(c) for c in campo)
                         )
                     response.write(linha + "\n")
+                    contagem_bloco_5+=1
+
             except Exception as e:
                 logger.error(f'Erro ao criar registro da Ficha 3B: {str(e)}')
                 return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
@@ -899,24 +961,29 @@ class ArquivoServices:
                     "|".join("" if c is None else str(c) for c in campo)
                     )
                 response.write(linha + "\n")
+                contagem_bloco_5+=1
 
                 campo = ["5415"] + [None] * 16
                 linha = (
                     "|".join("" if c is None else str(c) for c in campo)
                     )
                 response.write(linha + "\n")
+                contagem_bloco_5+=1
 
                 campo = ["5420"] + [None] * 4
                 linha = (
                     "|".join("" if c is None else str(c) for c in campo)
                     )
                 response.write(linha + "\n")
+                contagem_bloco_5+=1
 
                 campo = ["5425"] + [None] * 3
                 linha = (
                     "|".join("" if c is None else str(c) for c in campo)
                     )
                 response.write(linha + "\n")
+                contagem_bloco_5+=1
+
             except Exception as e:
                 logger.error(f'Erro ao criar registro da Ficha 3C: {str(e)}')
                 return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
@@ -928,19 +995,22 @@ class ArquivoServices:
                     "|".join("" if c is None else str(c) for c in campo)
                     )
                 response.write(linha + "\n")
+                contagem_bloco_5+=1
 
                 campo = ["5555"] + [None] * 12
                 linha = (
                     "|".join("" if c is None else str(c) for c in campo)
                     )
                 response.write(linha + "\n")
+                contagem_bloco_5+=1
+
             except Exception as e:
                 logger.error(f'Erro ao criar registro da Ficha 5B: {str(e)}')
                 return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
 
             # ENCERRAMENTO DO BLOCO 5
             try:
-                campo = ["5990"] + [None] * 1
+                campo = ["5990", contagem_bloco_5] 
                 linha = (
                     "|".join("" if c is None else str(c) for c in campo)
                 )
@@ -949,6 +1019,7 @@ class ArquivoServices:
                 logger.error(f'Erro ao criar regsitro do ENCERRAMENTO DO BLOCO 5: {str(e)}')
                 return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
 
+            contagem_bloco_9 = 0
             # ABERTURA DO BLOCO 9
             try:
                 campo = ["9001"] + [None] * 1
@@ -956,6 +1027,8 @@ class ArquivoServices:
                     "|".join("" if c is None else str(c) for c in campo)
                 )
                 response.write(linha + "\n")
+                contagem_bloco_9+=1
+
             except Exception as e:
                 logger.error(f'Erro ao criar regsitro da ABERTURA DO BLOCO 9: {str(e)}')
                 return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
@@ -967,13 +1040,15 @@ class ArquivoServices:
                     "|".join("" if c is None else str(c) for c in campo)
                 )
                 response.write(linha + "\n")
+                contagem_bloco_9+=1
+
             except Exception as e:
                 logger.error(f'Erro ao criar registro do REGISTRO DO ARQUIVO: {str(e)}')
                 return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
 
             # ENCERRAMENTO DO BLOCO 9
             try:
-                campo = ["9990"] + [None] * 1
+                campo = ["9990", contagem_bloco_9]
                 linha = (
                     "|".join("" if c is None else str(c) for c in campo)
                 )
@@ -984,7 +1059,8 @@ class ArquivoServices:
 
             # ENCERRAMENTO DO ARQUIVO DIGITAL
             try:
-                campo = ["9999"] + [None] * 1
+                total_linhas = contagem_bloco_0 + contagem_bloco_5 + contagem_bloco_9
+                campo = ["9999", total_linhas]
                 linha = (
                     "|".join("" if c is None else str(c) for c in campo)
                 )
@@ -998,6 +1074,7 @@ class ArquivoServices:
             logger.error(f'Erro ao gerar arquivo: {str(e)}')
             return HttpResponse('Erro ao gerar aquivo. Favor entrar em contato com o suporte', status=500)
 
+    """ Método para processamento do arquivo comercial """
     def comercial(self):
         
         self.registros_5015.extend(self.registro_nota_5015)
@@ -1007,6 +1084,7 @@ class ArquivoServices:
             f'attachment; filename="arquivo_ecredac_comercial_de_{self.mes_sped} de {self.data_sped.year}.txt"'
         )
 
+        contagem_bloco_0 = 0
         # ABERTURA DO ARQUIVO DIGITAL E IDENTIFICAÇÃO DA EMPRESA
         try:
             for r_job in self.registros_job:
@@ -1015,6 +1093,8 @@ class ArquivoServices:
                     "|".join("" if c is None else str(c) for c in campo) + "|"
                 )
                 response.write(linha + "\n")
+                contagem_bloco_0+=1
+
         except Exception as e:
             logger.error(f'Erro ao criar registro 0000 (Abertura do arquivo digital e identificação da empresa): {str(e)}')
             return HttpResponse('Não foi possível realizar a sua solicitação. Favor entrar em contato com suporte.', status=500)
@@ -1027,6 +1107,8 @@ class ArquivoServices:
                     "|".join("" if c is None else str(c) for c in campo)
                 )
                 response.write(linha + "\n")
+                contagem_bloco_0+=1
+
         except Exception as e:
             logger.error(f'Erro ao criar registro 0001 (Abertura do bloco 0: {str(e)}')
             return HttpResponse('Não foi possível realizar a sua solicitação. Favor entrar em contato com suporte.', status=500)
@@ -1039,6 +1121,8 @@ class ArquivoServices:
                     "|".join("" if c is None else str(c) for c in campo) + "|"
                 )
                 response.write(linha + "\n")
+                contagem_bloco_0+=1
+
         except Exception as e:
             logger.error(f'Erro ao criar registro 0150 (Cadastro de participantes): {str(e)}')
             return HttpResponse('Não foi possível realizar a sua solicitação. Favor entrar em contato com suporte.', status=500)
@@ -1050,15 +1134,31 @@ class ArquivoServices:
                     "|".join("" if c is None else str(c) for c in campo) + "|"
                 )
                 response.write(linha + "\n")
+                contagem_bloco_0+=1
+
         except Exception as e:
             logger.error(f'Erro ao criar regitro 0200 (cadastro geral dos itens): {str(e)}')
             return HttpResponse('Não foi possível realizar a sua solicitação. Favor entrar em contato com suporte.', status=500)
 
+        # ENCERRAMENTO DO BLOCO 0
+        try:
+            campo = ["0990", contagem_bloco_0]
+            linha = (
+                "|".join("" if c is None else str(c) for c in campo)
+            )
+            response.write(linha + "\n")
+        except Exception as e:
+            logger.error(f'Erro ao criar regitro 0990 (Encerramento do bloco 0): {str(e)}')
+            return HttpResponse('Não foi possível realizar a sua solicitação. Favor entrar em contato com suporte.', status=500)
+
+        contagem_bloco_5 = 0
         # ABERTURA DO BLOCO 5
         try:
-            campo = ["5001", "0"] + [None]
+            campo = ["5001", "0"]
             linha = "|" + "|".join("" if c is None else str(c) for c in campo)
             response.write(linha + "\n")
+            contagem_bloco_5+=1
+
         except Exception as e:
             logger.error(f'Erro ao criar registro 5001 (Abertura do bloco 5): {str(e)}')
             return HttpResponse('Não foi possível realizar a sua solicitação. Favor entrar em contato com suporte.', status=500)      
@@ -1074,6 +1174,7 @@ class ArquivoServices:
                 )
                 
                 response.write(linha + "\n")
+                contagem_bloco_5+=1
 
                 id_nota = r_5015[0]
                 data = r_5015[1].strftime("%d%m%Y") if r_5015[0] else ""
@@ -1147,12 +1248,15 @@ class ArquivoServices:
                         )
                         response.write(linha + "\n")
                         contagem += 1
+                        contagem_bloco_5+=1
 
                         campo = ["5020", valor_ipi, "0"]
                         linha = (
                         "|".join("" if c is None else str(c) for c in campo)
                         )
                         response.write(linha + "\n")
+                        contagem_bloco_5+=1
+                        
                     else:
                         continue
         except Exception as e:
@@ -1166,18 +1270,22 @@ class ArquivoServices:
                 "|".join("" if c is None else str(c) for c in campo)
             )
             response.write(linha + "\n")
+            contagem_bloco_5+=1
 
             campo = ["5085"] + [None] * 15
             linha = (
                 "|".join("" if c is None else str(c) for c in campo)
             )
             response.write(linha + "\n")
+            contagem_bloco_5+=1
 
             campo = ["5090"] + [None] * 1
             linha = (
                 "|".join("" if c is None else str(c) for c in campo)
             )
             response.write(linha + "\n")
+            contagem_bloco_5+=1
+
         except Exception as e:
             logger.error(f'Erro ao criar o registro da Ficha 1C: {str(e)}')
             return HttpResponse('Não foi possível realizar a sua solicitação. Favor entrar em contato com suporte.', status=500)
@@ -1189,12 +1297,15 @@ class ArquivoServices:
                 "|".join("" if c is None else str(c) for c in campo)
             )
             response.write(linha + "\n")
+            contagem_bloco_5+=1
 
             campo = ["5105"] + [None] * 12
             linha = (
                 "|".join("" if c is None else str(c) for c in campo)
             )
             response.write(linha + "\n")
+            contagem_bloco_5+=1
+
         except Exception as e:
             logger.error(f'Erro ao criar registro da Ficha 1D: {str(e)}')
             return HttpResponse('Não foi possível realizar a sua solicitação. Favor entrar em contato com suporte.', status=500)
@@ -1206,37 +1317,43 @@ class ArquivoServices:
                 "|".join("" if c is None else str(c) for c in campo)
                 )
             response.write(linha + "\n")
+            contagem_bloco_5+=1
 
             campo = ["5365"] + [None] * 17
             linha = (
                 "|".join("" if c is None else str(c) for c in campo)
                 )
             response.write(linha + "\n")
+            contagem_bloco_5+=1
 
             campo = ["5370"] + [None] * 2
             linha = (
                 "|".join("" if c is None else str(c) for c in campo)
                 )
             response.write(linha + "\n")
+            contagem_bloco_5+=1
 
             campo = ["5375"] + [None] * 4
             linha = (
                 "|".join("" if c is None else str(c) for c in campo)
                 )
             response.write(linha + "\n")
+            contagem_bloco_5+=1
 
             campo = ["5380"] + [None] * 3
             linha = (
                 "|".join("" if c is None else str(c) for c in campo)
                 )
             response.write(linha + "\n")
+            contagem_bloco_5+=1
+
         except Exception as e:
             logger.error(f'Erro ao criar registro da Ficha 3B: {str(e)}')
             return HttpResponse('Não foi possível realizar a sua solicitação. Favor entrar em contato com suporte.', status=500)
 
         # ENCERRAMENTO DO BLOCO 5
         try:
-            campo = ["5990"] + [None] * 1
+            campo = ["5990", contagem_bloco_5]
             linha = (
                 "|".join("" if c is None else str(c) for c in campo)
             )
@@ -1244,7 +1361,8 @@ class ArquivoServices:
         except Exception as e:
             logger.error(f'Erro no ENCERRAMENTO DO BLOCO 5: {str(e)}')
             return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
-
+        
+        contagem_bloco_9 = 0
         # ABERTURA DO BLOCO 9
         try:
             campo = ["9001"] + [None] * 1
@@ -1252,6 +1370,8 @@ class ArquivoServices:
                 "|".join("" if c is None else str(c) for c in campo)
             )
             response.write(linha + "\n")
+            contagem_bloco_9+=1
+
         except Exception as e:
             logger.error(f'Erro na ABERTURA DO BLOCO 9: {str(e)}')
             return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
@@ -1263,13 +1383,15 @@ class ArquivoServices:
                 "|".join("" if c is None else str(c) for c in campo)
             )
             response.write(linha + "\n")
+            contagem_bloco_9+=1
+
         except Exception as e:
             logger.error(f'Erro no REGISTRO DO ARQUIVO: {str(e)}')
             return HttpResponse('Não foi possível realizar sua solicitação. Favor entrar em contato com o suporte.', status=500)
 
         # ENCERRAMENTO DO BLOCO 9
         try:
-            campo = ["9990"] + [None] * 1
+            campo = ["9990", contagem_bloco_9]
             linha = (
                 "|".join("" if c is None else str(c) for c in campo)
             )
@@ -1280,7 +1402,8 @@ class ArquivoServices:
 
         # ENCERRAMENTO DO ARQUIVO DIGITAL
         try:
-            campo = ["9999"] + [None] * 1
+            total_linhas = contagem_bloco_0 + contagem_bloco_5 + contagem_bloco_9
+            campo = ["9999", total_linhas]
             linha = (
                 "|".join("" if c is None else str(c) for c in campo)
             )
