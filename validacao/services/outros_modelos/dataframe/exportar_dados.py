@@ -2,7 +2,6 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment
 from django.http import HttpResponse
 from datetime import datetime
-import pandas as pd
 from django.db import connection
 import logging
 
@@ -31,13 +30,17 @@ class ExportarServices:
 
         query_sped = (
             "SELECT "
-            "  CASE d.ind_oper WHEN '0' THEN 'Entrada' WHEN '1' THEN 'Saida' ELSE '---' END AS tipo, "
+            "  d.id AS d100_id, "
+            "  COALESCE(d.reg, 'D100') AS reg_d100, "
+            "  COALESCE(a.reg, 'D190') AS reg_d190, "
             "  p.cnpj_cpf AS cnpj_cpf, "
             "  p.nome AS nome, "
             "  d.num_doc AS num_doc, "
             "  COALESCE(d.chv_cte, '---') AS chv_cte, "
             "  COALESCE(d.ser, '---') AS ser, "
             "  d.dt_doc AS dt_doc, "
+            "  COALESCE(d.vl_doc, 0) AS vl_doc, "
+            "  COALESCE(d.vl_serv, 0) AS vl_serv, "
             "  COALESCE(a.cfop, '---') AS cfop, "
             "  COALESCE(a.cst_icms, '---') AS cst_icms, "
             "  COALESCE(a.aliq_icms, 0) AS aliq_icms, "
@@ -45,8 +48,6 @@ class ExportarServices:
             "  COALESCE(a.vl_bc_icms, 0) AS vl_bc_icms, "
             "  COALESCE(a.vl_icms, 0) AS vl_icms, "
             "  COALESCE(a.vl_red_bc, 0) AS vl_red_bc, "
-            "  COALESCE(d.vl_doc, 0) AS vl_doc, "
-            "  COALESCE(d.vl_serv, 0) AS vl_serv, "
             "  COALESCE(a.cod_obs, '---') AS cod_obs "
             "FROM validacao_registrotransported100 AS d "
             "LEFT JOIN validacao_participantes AS p "
@@ -60,13 +61,17 @@ class ExportarServices:
 
         query_energia = (
             "SELECT "
-            "  CASE c.ind_oper WHEN '0' THEN 'Entrada' WHEN '1' THEN 'Saida' ELSE '---' END AS tipo, "
+            "  c.id AS c500_id, "
+            "  COALESCE(c.reg, 'C500') AS reg_c500, "
+            "  COALESCE(a.reg, 'C590') AS reg_c590, "
             "  p.cnpj_cpf AS cnpj_cpf, "
             "  p.nome AS nome, "
             "  c.num_doc AS num_doc, "
             "  COALESCE(c.chv_doce, '---') AS chv_doce, "
             "  COALESCE(c.ser, '---') AS ser, "
             "  c.dt_doc AS dt_doc, "
+            "  COALESCE(c.vl_doc, 0) AS vl_doc, "
+            "  COALESCE(c.vl_forn, 0) AS vl_forn, "
             "  COALESCE(a.cfop, '---') AS cfop, "
             "  COALESCE(a.cst_icms, '---') AS cst_icms, "
             "  COALESCE(a.aliq_icms, 0) AS aliq_icms, "
@@ -76,8 +81,6 @@ class ExportarServices:
             "  COALESCE(a.vl_bc_icms_st, 0) AS vl_bc_icms_st, "
             "  COALESCE(a.vl_icms_st, 0) AS vl_icms_st, "
             "  COALESCE(a.vl_red_bc, 0) AS vl_red_bc, "
-            "  COALESCE(c.vl_doc, 0) AS vl_doc, "
-            "  COALESCE(c.vl_forn, 0) AS vl_forn, "
             "  COALESCE(a.cod_obs, '---') AS cod_obs "
             "FROM validacao_registroenergiac500 AS c "
             "LEFT JOIN validacao_participantes AS p "
@@ -91,12 +94,16 @@ class ExportarServices:
 
         query_comunicacao = (
             "SELECT "
-            "  CASE d.ind_oper WHEN '0' THEN 'Entrada' WHEN '1' THEN 'Saida' ELSE '---' END AS tipo, "
+            "  d.id AS d500_id, "
+            "  COALESCE(d.reg, 'D500') AS reg_d500, "
+            "  COALESCE(a.reg, 'D590') AS reg_d590, "
             "  p.cnpj_cpf AS cnpj_cpf, "
             "  p.nome AS nome, "
             "  d.num_doc AS num_doc, "
             "  COALESCE(d.ser, '---') AS ser, "
             "  d.dt_doc AS dt_doc, "
+            "  COALESCE(d.vl_doc, 0) AS vl_doc, "
+            "  COALESCE(d.vl_serv, 0) AS vl_serv, "
             "  COALESCE(a.cfop, '---') AS cfop, "
             "  COALESCE(a.cst_icms, '---') AS cst_icms, "
             "  COALESCE(a.aliq_icms, 0) AS aliq_icms, "
@@ -106,8 +113,6 @@ class ExportarServices:
             "  COALESCE(a.vl_bc_icms_st, 0) AS vl_bc_icms_st, "
             "  COALESCE(a.vl_icms_st, 0) AS vl_icms_st, "
             "  COALESCE(a.vl_red_bc, 0) AS vl_red_bc, "
-            "  COALESCE(d.vl_doc, 0) AS vl_doc, "
-            "  COALESCE(d.vl_serv, 0) AS vl_serv, "
             "  COALESCE(a.cod_obs, '---') AS cod_obs "
             "FROM validacao_registrocomunicacaod500 AS d "
             "LEFT JOIN validacao_participantes AS p "
@@ -128,67 +133,83 @@ class ExportarServices:
             rows_comunicacao = cursor.fetchall()
 
         colunas = [
-            'REG',
+            'Registro',
             'CNPJ/CPF',
-            'Nome',
-            'Número Doc',
+            'Participante',
+            'Nº Doc',
             'Chave CT-e',
             'Série',
-            'Data Emissão',
+            'Emissão',
+            'Valor Doc',
+            'Valor Serviço',
             'CFOP',
             'CST',
-            'Alíquota ICMS',
+            'Aliq ICMS',
             'Valor Operação',
             'Base ICMS',
             'Valor ICMS',
-            'Redução BC / ICMS-ST',
-            'Valor Documento',
-            'Valor Serviço',
-            'Cód. Observação',
+            'Red. BC/ICMS-ST',
+            'Cód. Obs',
         ]
 
         colunas_energia = [
-            'REG',
+            'Registro',
             'CNPJ/CPF',
-            'Nome',
-            'Número Doc',
+            'Participante',
+            'Nº Doc',
             'Chave DOC-e',
             'Série',
-            'Data Emissão',
+            'Emissão',
+            'Valor Doc',
+            'Valor Fornecido',
             'CFOP',
             'CST',
-            'Alíquota ICMS',
+            'Aliq ICMS',
             'Valor Operação',
             'Base ICMS',
             'Valor ICMS',
             'Base ICMS-ST',
             'Valor ICMS-ST',
-            'Redução BC',
-            'Valor Documento',
-            'Valor Fornecido',
-            'Cód. Observação',
+            'Red. BC',
+            'Cód. Obs',
         ]
 
         colunas_comunicacao = [
-            'REG',
+            'Registro',
             'CNPJ/CPF',
-            'Nome',
-            'Número Doc',
+            'Participante',
+            'Nº Doc',
             'Série',
-            'Data Emissão',
+            'Emissão',
+            'Valor Doc',
+            'Valor Serviço',
             'CFOP',
             'CST',
-            'Alíquota ICMS',
+            'Aliq ICMS',
             'Valor Operação',
             'Base ICMS',
             'Valor ICMS',
             'Base ICMS-ST',
             'Valor ICMS-ST',
-            'Redução BC',
-            'Valor Documento',
-            'Valor Serviço',
-            'Cód. Observação',
+            'Red. BC',
+            'Cód. Obs',
         ]
+
+        linhas_sped = self._linhas_hierarquia(
+            rows,
+            n_campos_pai=8,
+            n_campos_filho=8,
+        )
+        linhas_energia = self._linhas_hierarquia(
+            rows_energia,
+            n_campos_pai=8,
+            n_campos_filho=10,
+        )
+        linhas_comunicacao = self._linhas_hierarquia(
+            rows_comunicacao,
+            n_campos_pai=7,
+            n_campos_filho=10,
+        )
 
         def preencher_planilha(ws, colunas_ws, rows_ws):
             ws.append(colunas_ws)
@@ -205,26 +226,53 @@ class ExportarServices:
                 for cell in col:
                     try:
                         max_length = max(max_length, len(str(cell.value)))
-                    except:
+                    except Exception:
                         pass
                 ws.column_dimensions[column].width = max_length + 2
 
         wb = Workbook()
         ws = wb.active
         ws.title = "Transportes"
-        preencher_planilha(ws, colunas, rows)
+        preencher_planilha(ws, colunas, linhas_sped)
 
         ws_energia = wb.create_sheet(title="Energia")
-        preencher_planilha(ws_energia, colunas_energia, rows_energia)
+        preencher_planilha(ws_energia, colunas_energia, linhas_energia)
 
         ws_comunicacao = wb.create_sheet(title="Comunicação")
-        preencher_planilha(ws_comunicacao, colunas_comunicacao, rows_comunicacao)
+        preencher_planilha(ws_comunicacao, colunas_comunicacao, linhas_comunicacao)
 
         response = HttpResponse(
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
         data_formatada = data_sped_obj.strftime("%d-%m-%Y")
-        response['Content-Disposition'] = f'attachment; filename="relatorio_servicos_{data_formatada}.xlsx"'
+        response['Content-Disposition'] = f'attachment; filename="relatorio_outrosmodelos_{data_formatada}.xlsx"'
 
         wb.save(response)
         return response
+
+    @staticmethod
+    def _linhas_hierarquia(rows, n_campos_pai, n_campos_filho):
+        """Monta linhas iguais à tela: documento (D100/C500/D500) e analíticos abaixo."""
+        linhas = []
+        documentos_vistos = set()
+        inicio_pai = 3
+        fim_pai = inicio_pai + n_campos_pai
+        inicio_filho = fim_pai
+        fim_filho = inicio_filho + n_campos_filho
+        vazios_pai = ('',) * n_campos_pai
+        vazios_filho = ('',) * n_campos_filho
+
+        for row in rows:
+            doc_id = row[0]
+            reg_pai = row[1]
+            reg_filho = row[2]
+            campos_pai = row[inicio_pai:fim_pai]
+            campos_filho = row[inicio_filho:fim_filho]
+
+            if doc_id not in documentos_vistos:
+                documentos_vistos.add(doc_id)
+                linhas.append((reg_pai, *campos_pai, *vazios_filho))
+
+            linhas.append((reg_filho, *vazios_pai, *campos_filho))
+
+        return linhas

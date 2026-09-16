@@ -1,4 +1,4 @@
-from django.http import HttpResponseServerError
+from django.http import HttpResponse, HttpResponseServerError
 from datetime import datetime
 from django.db import connection
 from openpyxl import Workbook
@@ -48,19 +48,15 @@ class ExportarService:
                 "COALESCE(pr.valor_ipi, 0) AS valor_ipi, "
                 "COALESCE(n.tipo_operacao, '---') AS tipo_operacao, "
                 "COALESCE(n.numero_documento, '---') AS numero_documento "
-                "FROM validacao_participantes p "
-                "LEFT JOIN validacao_notas_participantes n "
-                "    ON n.cod_part = p.cod_part "
-                "    AND n.empresa_id = p.empresa_id "
-                "    AND n.data_inicio_sped = p.data_inicio_sped "
-                "LEFT JOIN validacao_produtos_notas pr "
-                "    ON pr.numero_nota = n.numero_nota "
-                "    AND pr.empresa_id = n.empresa_id "
-                "    AND pr.data_inicio_sped = n.data_inicio_sped "
-                "    AND pr.status IN ('C/N', 'S/CADASTRO') "
+                "FROM validacao_participantes AS p "
+                "INNER JOIN validacao_notas_participantes AS n "
+                "    ON n.part_titular_id = p.id "
+                "INNER JOIN validacao_produtos_notas AS pr "
+                "    ON pr.nota_titular_id = n.id "
                 "WHERE p.empresa_id = %s "
                 "    AND p.data_inicio_sped = %s "
-                "    AND n.tipo IN ('Entrada', 'Saida') "
+                "    AND n.tipo IS NOT NULL "
+                "    AND pr.status IN ('C/N', 'S/CADASTRO') "
             )
 
         with connection.cursor() as cursor:
@@ -117,7 +113,7 @@ class ExportarService:
             ws.column_dimensions[column].width = max_length + 2
 
         # Retorna resposta HTTP (download)
-        response = HttpResponseServerError(
+        response = HttpResponse(
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
         data_formatada = data_sped_obj.strftime("%d-%m-%Y")

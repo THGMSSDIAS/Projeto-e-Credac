@@ -19,6 +19,9 @@ from validacao.utils.normalizadores import _to_decimal
 class DataFrame(View):
 
     def get(self, request):
+        if request.GET.get('opcs') == 'exportar':
+            return self.exportar_relatorio(request.GET)
+
         empresa_id_param = request.GET.get('empresa_id')
         data_sped_param = request.GET.get('data_sped')
 
@@ -366,7 +369,7 @@ class DataFrame(View):
 
     def exportar_relatorio(self, request):
       
-      service = ExportarService(request.POST)
+      service = ExportarService(request)
 
       return service.exportar_relatorio()
 
