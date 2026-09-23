@@ -274,7 +274,8 @@ class SPEDProcesses:
                     "numero_nota": numero_nota_atual,
                     "codigo_uf": estado,
                     "tipo_documento": parts[5] if len(parts) > 5 else None,
-                    "serie_documento": parts[6] if len(parts) > 6 else None,
+                    "codigo_situacao": parts[6] if len(parts) > 5 else None,
+                    "serie_documento": parts[7] if len(parts) > 7 else None,
                     "chave_nota": _norm(parts[9] if len(parts) > 9 else None),
                     "status": "S/PRODUTO",
                     "data_entrada_saida": data_entrada_saida_ok,
@@ -287,8 +288,8 @@ class SPEDProcesses:
                     "data_inicio_sped": data_inicio_sped_ok,
                     "data_fim_sped": data_fim_sped_ok,
                     "mes_referencia": mes_referencia,
-                    "tipo_operacao": None,  # Será preenchido se for importação
-                    "numero_documento": None,  # Número do documento de importação do C120
+                    "tipo_operacao": None,  
+                    "numero_importacao": None,  # Número de importação do C120
                 }
 
                 if cod_part_c100 and cod_part_c100 in participantes_map:
