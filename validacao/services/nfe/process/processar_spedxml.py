@@ -111,7 +111,8 @@ class ProcessSpedXml:
                     codigo_uf=nota.get('codigo_uf'),
                     status=nota.get('status'),
                     tipo_operacao=nota.get('tipo_operacao'),  # 'Importação' se houver C110 com IMPORT
-                    numero_documento=nota.get('numero_documento'),  # Número do documento de importação do C120
+                    numero_importacao=nota.get('numero_importacao'),  # Número de importação do C120
+                    cod_situacao=nota.get('codigo_situacao'),
                     mes_sped=nota.get('mes_referencia'),
                     data_entrada_saida=nota.get('data_entrada_saida'),
                     tipo_documento=nota.get('tipo_documento'),
@@ -234,23 +235,23 @@ class ProcessSpedXml:
                         logger.error('Erro ao extrair info produtos do XML.')
                         raise SpedXmlException()
 
-                    for produtos in xml_data:
-                        if not isinstance(produtos, dict):
-                            logger.error(f"Produto do XML não é dict: {produtos}")
+                    for data in xml_data:
+                        if not isinstance(data, dict):
+                            logger.error(f"Produto do XML não é dict: {data}")
                             raise SpedXmlException()
 
-                        numero_nota = produtos.get('numero_nota', '').strip()
+                        numero_nota = data.get('numero_nota', '').strip()
 
                         if not numero_nota:
                             logger.warning(f"Arquivo '{xml_file.name}' sem número de nota.")
-                            continue
+                            break
 
                         notas_query = Notas_participantes.objects.filter(
                             numero_nota=numero_nota,    
                             empresa=empresa_obj
                         )
 
-                        cod_prod = produtos.get('codigo_prod')
+                        cod_prod = data.get('codigo_prod')
                         cadastro_itens = dados_sped.get('cadastro_itens_sped', [])
 
                         codigos_cadastrados = set()
@@ -259,31 +260,33 @@ class ProcessSpedXml:
                             if codigo_item:
                                 codigos_cadastrados.add(codigo_item)
                    
-               
 
                         if data_sped_atual:
                             notas_query = notas_query.filter(data_inicio_sped=data_sped_atual)
                         notas_participantes_saida = notas_query.first()
 
-
                         mes = {
                             '01': 'Janeiro', '02': 'Fevereiro', '03': 'Março', '04': 'Abril',
                             '05': 'Maio', '06': 'Junho', '07': 'Julho', '08': 'Agosto',
                             '09': 'Setembro', '10': 'Outubro', '11': 'Novembro', '12': 'Dezembro'
-
                         }
 
-                        data = str(data_sped_atual)
-                        if '-' in data:
-                            mes_number = data[5:7]
+                        data_sped = str(data_sped_atual)
+                        if '-' in data_sped:
+                            mes_number = data_sped[5:7]
                         else:
-                            mes_number = data[4:6]
+                            mes_number = data_sped[4:6]
 
                         mes_ref = mes.get(mes_number)
 
                         if notas_participantes_saida: 
                             notas_participantes_saida.status = 'C/PRODUTO'
-                            notas_participantes_saida.tipo = 'Saida'
+                            notas_participantes_saida.chave_nota = data.get('chave_nota')
+                            notas_participantes_saida.codigo_uf = data.get('codigo_uf')
+                            notas_participantes_saida.tipo_operacao = data.get('tipo_operacao')
+                            notas_participantes_saida.serie_documento = data.get('serie_documento')
+                            notas_participantes_saida.tipo_documento = data.get('tipo_documento')
+                            
                             notas_participantes_saida.save()
 
                             if cod_prod not in codigos_cadastrados:
@@ -294,38 +297,37 @@ class ProcessSpedXml:
                                         defaults = {
                                             'data_inicio_sped':data_sped_atual,
                                             'data_fim_sped':data_fim_sped,
-                                            'descricao_prod':produtos.get('descricao_prod'),
-                                            'unidade':produtos.get('unidade'),
-                                            'ncm':produtos.get('ncm'),
-                                            'cest':produtos.get('cest'),
+                                            'descricao_prod':data.get('descricao_prod'),
+                                            'unidade':data.get('unidade'),
+                                            'ncm':data.get('ncm'),
+                                            'cest':data.get('cest'),
                                             'mes_ref':mes_ref,
                                         }
                                     )
                                 except Exception as e:
                                     logger.error(f'Erro ao criar cadastro de itens SPED: {str(e)}')
                                     continue
-
+                                    
                             produto_obj = Produtos_notas.objects.create(
-                                tipo_nota='Saida',
                                 empresa=empresa_obj,
                                 nota_titular=notas_participantes_saida,
                                 data_inicio_sped=data_sped_atual,
                                 codigo_prod=cod_prod,
-                                descricao_prod=produtos.get('descricao_prod'),
-                                ncm=produtos.get('ncm'),
-                                cfop_prod=produtos.get('cfop'),
-                                unidade=produtos.get('unidade'),
-                                cst=produtos.get('cst'),
-                                quantidade_prod=normalizador_decimal(produtos.get('quantidade_prod')),
-                                valor_total=normalizador_decimal(produtos.get('valor_total')),
-                                valor_unitario=normalizador_decimal(produtos.get('valor_unitario')),
-                                base_icms=normalizador_decimal(produtos.get('base_icms')),
-                                valor_ipi=normalizador_decimal(produtos.get('valor_ipi')),
-                                valor_icms=normalizador_decimal(produtos.get('valor_icms')),
-                                valor_pis=normalizador_decimal(produtos.get('valor_pis')),
-                                cest=produtos.get('cest'),
-                                aliquota_icms=normalizador_decimal(produtos.get('aliquota_icms')),
-                                tipo_item=produtos.get('numero_item'),
+                                descricao_prod=data.get('descricao_prod'),
+                                ncm=data.get('ncm'),
+                                cfop_prod=data.get('cfop'),
+                                unidade=data.get('unidade'),
+                                cst=data.get('cst'),
+                                quantidade_prod=normalizador_decimal(data.get('quantidade_prod')),
+                                valor_total=normalizador_decimal(data.get('valor_total')),
+                                valor_unitario=normalizador_decimal(data.get('valor_unitario')),
+                                base_icms=normalizador_decimal(data.get('base_icms')),
+                                valor_ipi=normalizador_decimal(data.get('valor_ipi')),
+                                valor_icms=normalizador_decimal(data.get('valor_icms')),
+                                valor_pis=normalizador_decimal(data.get('valor_pis')),
+                                cest=data.get('cest'),
+                                aliquota_icms=normalizador_decimal(data.get('aliquota_icms')),
+                                tipo_item=data.get('numero_item'),
                                 status='C/N',
                             )
                             produtos_criados.append(produto_obj)
@@ -336,8 +338,7 @@ class ProcessSpedXml:
                         else:
                             # ✅ CRÍTICO: Usa sempre a data do SPED atual para notas e produtos criados a partir de XMLs
                             notas_participantes_obj = Notas_participantes.objects.create(
-                                tipo='Saida',
-                                chave_nota=produtos.get('chave_nota'),
+                                chave_nota=data.get('chave_nota'),
                                 nota_titular=None,
                                 cod_part='---',
                                 codigo_uf=None,
@@ -354,10 +355,10 @@ class ProcessSpedXml:
                                         defaults = {
                                             'data_inicio_sped':data_sped_atual,
                                             'data_fim_sped':data_fim_sped,
-                                            'descricao_prod':produtos.get('descricao_prod'),
-                                            'unidade':produtos.get('unidade'),
-                                            'ncm':produtos.get('ncm'),
-                                            'cest':produtos.get('cest'),
+                                            'descricao_prod':data.get('descricao_prod'),
+                                            'unidade':data.get('unidade'),
+                                            'ncm':data.get('ncm'),
+                                            'cest':data.get('cest'),
                                             'mes_ref':mes_ref,
                                         }
                                     )
@@ -372,22 +373,22 @@ class ProcessSpedXml:
                                 nota_titular=notas_participantes_obj,
                                 empresa=empresa_obj,
                                 data_inicio_sped=data_sped_atual,
-                                codigo_prod=produtos.get('codigo_prod'),
-                                descricao_prod=produtos.get('descricao_prod'),
-                                ncm=produtos.get('ncm'),
-                                cfop_prod=produtos.get('cfop'),
-                                unidade=produtos.get('unidade'),
-                                cst=produtos.get('cst'),
-                                quantidade_prod=normalizador_decimal(produtos.get('quantidade_prod')),
-                                valor_total=normalizador_decimal(produtos.get('valor_total') or produtos.get('valor_total_bruto') or produtos.get('valor_prod')),
-                                valor_unitario=normalizador_decimal(produtos.get('valor_unitario')),
-                                base_icms=normalizador_decimal(produtos.get('base_icms')),
-                                valor_ipi=normalizador_decimal(produtos.get('valor_ipi')),
-                                valor_pis=normalizador_decimal(produtos.get('valor_pis')),
-                                valor_icms=normalizador_decimal(produtos.get('valor_icms')),
-                                cest=produtos.get('cest'),
-                                aliquota_icms=normalizador_decimal(produtos.get('aliquota_icms')),
-                                tipo_item=produtos.get('numero_item'),
+                                codigo_prod=data.get('codigo_prod'),
+                                descricao_prod=data.get('descricao_prod'),
+                                ncm=data.get('ncm'),
+                                cfop_prod=data.get('cfop'),
+                                unidade=data.get('unidade'),
+                                cst=data.get('cst'),
+                                quantidade_prod=normalizador_decimal(data.get('quantidade_prod')),
+                                valor_total=normalizador_decimal(data.get('valor_total') or data.get('valor_total_bruto') or data.get('valor_prod')),
+                                valor_unitario=normalizador_decimal(data.get('valor_unitario')),
+                                base_icms=normalizador_decimal(data.get('base_icms')),
+                                valor_ipi=normalizador_decimal(data.get('valor_ipi')),
+                                valor_pis=normalizador_decimal(data.get('valor_pis')),
+                                valor_icms=normalizador_decimal(data.get('valor_icms')),
+                                cest=data.get('cest'),
+                                aliquota_icms=normalizador_decimal(data.get('aliquota_icms')),
+                                tipo_item=data.get('numero_item'),
                                 status='C/N',
                             )
 
