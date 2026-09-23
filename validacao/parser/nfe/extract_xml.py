@@ -97,13 +97,15 @@ class XMLProcesses:
 
             
             for inf in infs:
+                
+
                 numero_nota = inf.findtext('.//ns:ide/ns:nNF', default='', namespaces=processor.ns).strip()
 
 
                 numero_id = inf.get('Id') or inf.get('id') if inf is not None else ''
 
             
-                numero_id_formatado = numero_id[3:]
+                chave_nota = numero_id[3:]
 
 
                 
@@ -139,10 +141,48 @@ class XMLProcesses:
                     # Calcular imposto do item: IPI + ST
                     calculo_imposto_item = round(valor_st_item + valor_ipi_item, 2)
 
-                    prod = {
+                    codigo_uf = inf.findtext('.//ns:ide/ns:cUF', default='', namespaces=processor.ns).strip()
+                    
+
+                    uf_map = {
+                        "12": "AC",
+                        "27": "AL",
+                        "13": "AM",
+                        "16": "AP",
+                        "29": "BA",
+                        "23": "CE",
+                        "53": "DF",
+                        "32": "ES",
+                        "52": "GO",
+                        "21": "MA",
+                        "31": "MG",
+                        "50": "MS",
+                        "51": "MT",
+                        "15": "PA",
+                        "25": "PB",
+                        "26": "PE",
+                        "22": "PI",
+                        "41": "PR",
+                        "33": "RJ",
+                        "24": "RN",
+                        "43": "RS",
+                        "11": "RO",
+                        "14": "RR",
+                        "42": "SC",
+                        "28": "SE",
+                        "35": "SP",
+                        "17": "TO",
+                    }
+
+                    sigla_uf = uf_map.get(codigo_uf, '')
+
+                    xml_data = {
                         'numero_nota': numero_nota,
-                        'numero_id': numero_id_formatado,
-                        'chave_nota': inf.findtext('.//ns:protNFe/ns:chNFe', default='', namespaces=processor.ns).strip(),
+                        'codigo_uf': sigla_uf,
+                        'chave_nota': chave_nota,
+                        'tipo_operacao': inf.findtext('.//ns:ide/ns:natOp', default='', namespaces=processor.ns).strip(),
+                        'serie_documento': inf.findtext('.//ns:ide/ns:serie', default='', namespaces=processor.ns).strip(),
+                        'tipo_documento': inf.findtext('.//ns:ide/ns:mod', default='', namespaces=processor.ns).strip(),
                         'codigo_prod': det.findtext('.//ns:prod/ns:cProd', default='', namespaces=processor.ns).strip(),
                         'descricao_prod': det.findtext('.//ns:prod/ns:xProd', default='', namespaces=processor.ns).strip(),
                         'unidade': det.findtext('.//ns:prod/ns:uCom', default='', namespaces=processor.ns).strip(),
@@ -158,7 +198,7 @@ class XMLProcesses:
                         'base_icms': det.findtext('.//ns:ICMS/*/ns:vBC', default='', namespaces=processor.ns).strip(),
                         'aliquota_icms': det.findtext('.//ns:ICMS/*/ns:pICMS', default='', namespaces=processor.ns).strip(),
                     }
-                    itens_temp.append(prod)
+                    itens_temp.append(xml_data)
 
                 # calcular valor para rateio (frete + seguro + outros - desconto)
                 n = len(itens_temp)
