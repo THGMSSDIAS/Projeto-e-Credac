@@ -55,17 +55,16 @@
             <table class="table table-hover align-middle table-bordered text-center" id="table-producao-propria">
                 <thead>
                     <tr>
-                        <th><span class="header-title">Bloco</span><input type="text" name="f0" class="filter-input" placeholder="Filtrar" value="{{ filters.bloco|default:'' }}"></th>
-                        <th><span class="header-title">Data Inicial</span><input type="date" name="f1" class="filter-input" value="{{ filters.data_inicial_op|default:'' }}"></th>
-                        <th><span class="header-title">Data Final</span><input type="date" name="f2" class="filter-input" value="{{ filters.data_final_op|default:'' }}"></th>
-                        <th><span class="header-title">Cód. Ordem</span><input type="text" name="f3" class="filter-input" value="{{ filters.cod_ordem_prod|default:'' }}"></th>
-                        <th><span class="header-title">Código Item</span><input type="text" name="f4" class="filter-input" value="{{ filters.codigo_item|default:'' }}"></th>
-                        <th><span class="header-title">Qtd Produção</span><input type="text" name="f5" class="filter-input" value="{{ filters.qtd_producao_acabada|default:'' }}"></th>
-                        <th><span class="header-title">Mês Ref.</span><input type="text" name="f6" class="filter-input" value="{{ filters.mes_referencia_k230|default:'' }}"></th>
-                        <th><span class="header-title">Ano SPED</span><input type="text" name="f10" class="filter-input" value="{{ filters.ano_sped|default:'' }}"></th>
+                        <th><span class="header-title">Bloco</span><input type="text" name="f0" class="filter-input" placeholder="Filtrar" value="{{ filters.bloco|default:'' }}" ></th>
+                        <th><span class="header-title">Data Inicial</span><input type="date" name="f1" class="filter-input" value="{{ filters.data_inicial_op|default:'' }}" ></th>
+                        <th><span class="header-title">Data Final</span><input type="date" name="f2" class="filter-input" value="{{ filters.data_final_op|default:'' }}" ></th>
+                        <th><span class="header-title">Cód. Ordem</span><input type="text" name="f3" class="filter-input" value="{{ filters.cod_ordem_prod|default:'' }}" ></th>
+                        <th><span class="header-title">Código Item</span><input type="text" name="f4" class="filter-input" value="{{ filters.codigo_item|default:'' }}" ></th>
+                        <th><span class="header-title">Qtd Produção</span><input type="text" name="f5" class="filter-input" value="{{ filters.qtd_producao_acabada|default:'' }}" ></th>
+                        <th><span class="header-title">Mês Ref.</span><input type="text" name="f6" class="filter-input" value="{{ filters.mes_referencia_k230|default:'' }}" ></th>
+                        <th><span class="header-title">Ano SPED</span><input type="text" name="f10" class="filter-input" value="{{ filters.ano_sped|default:'' }}" ></th>
                         <th><span class="header-title">Data Saída</span><input type="date" name="f7" class="filter-input" value="{{ filters.data_saida_estoque|default:'' }}"></th>
                         <th><span class="header-title">Quantidade</span><input type="text" name="f8" class="filter-input" value="{{ filters.quantidade|default:'' }}"></th>
-                        <th><span class="header-title">Cód. Insumo</span><input type="text" name="f9" class="filter-input" value="{{ filters.codigo_insumo|default:'' }}"></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -74,13 +73,13 @@
                             {% for item_produzido in grupo.k230s %}
                             <tr class="k230-row">
                                 <td><strong>K230</strong></td>
-                                <td><input type="text" value="{% if item_produzido.data_inicial_op %}{{ item_produzido.data_inicial_op|date:'d/m/Y' }}{% endif %}" class="input_cells"></td>
-                                <td><input type="text" value="{% if item_produzido.data_final_op %}{{ item_produzido.data_final_op|date:'d/m/Y' }}{% endif %}" class="input_cells"></td>
-                                <td><input type="text" value="{{ item_produzido.cod_ordem_prod|default:'' }}" class="input_cells"></td>
-                                <td><input type="text" value="{{ item_produzido.codigo_item|default:'' }}" class="input_cells"></td>
-                                <td><input type="text" value="{{ item_produzido.qtd_producao_acabada|default:'' }}" class="input_cells"></td>
-                                <td><input type="text" value="{{ item_produzido.mes_referencia_k230|default:'' }}" class="input_cells"></td>
-                                <td><input type="text" value="{{ item_produzido.ano_sped|default:'' }}" class="input_cells"></td>
+                                <td><input type="text" value="{% if item_produzido.data_inicial_op %}{{ item_produzido.data_inicial_op|date:'d/m/Y' }}{% endif %}" class="input_cells" readonly disabled></td>
+                                <td><input type="text" value="{% if item_produzido.data_final_op %}{{ item_produzido.data_final_op|date:'d/m/Y' }}{% endif %}" class="input_cells" readonly disabled></td>
+                                <td><input type="text" value="{{ item_produzido.cod_ordem_prod|default:'' }}" class="input_cells" readonly disabled></td>
+                                <td><input type="text" value="{{ item_produzido.codigo_item|default:'' }}" class="input_cells" readonly disabled></td>
+                                <td><input type="text" value="{{ item_produzido.qtd_producao_acabada|default:'' }}" class="input_cells" readonly disabled></td>
+                                <td><input type="text" value="{{ item_produzido.mes_referencia_k230|default:'' }}" class="input_cells" readonly disabled></td>
+                                <td><input type="text" value="{{ item_produzido.ano_sped|default:'' }}" class="input_cells" readonly disabled></td>
                                 <td></td><td></td><td></td>
                             </tr>
                             {% endfor %}
@@ -88,13 +87,12 @@
                             <tr class="k235-row">
                                 <td>K235</td>
                                 <td></td><td></td><td></td>
-                                <td><input type="text" value="{{ insumo.codigo_insumo|default:'' }}" class="input_cells"></td>
+                                <td><input type="text" value="{{ insumo.codigo_insumo|default:'' }}" class="input_cells" readonly disabled></td>
                                 <td></td>
-                                <td><input type="text" value="{{ insumo.mes_referencia_k235|default:'' }}" class="input_cells"></td>
-                                <td><input type="text" value="{{ insumo.ano_sped|default:'' }}" class="input_cells"></td>
-                                <td><input type="text" value="{% if insumo.data_saida_estoque %}{{ insumo.data_saida_estoque|date:'d/m/Y' }}{% endif %}" class="input_cells"></td>
+                                <td><input type="text" value="{{ insumo.mes_referencia_k235|default:'' }}" class="input_cells" readonly disabled></td>
+                                <td><input type="text" value="{{ insumo.ano_sped|default:'' }}" class="input_cells" readonly disabled></td>
+                                <td><input type="text" value="{% if insumo.data_saida_estoque %}{{ insumo.data_saida_estoque|date:'d/m/Y' }}{% endif %}" class="input_cells" readonly disabled></td>
                                 <td><input type="text" value="{{ insumo.quantidade|default:'' }}" class="input_cells"></td>
-                                <td><input type="text" value="{{ insumo.codigo_insumo|default:'' }}" class="input_cells"></td>
                             </tr>
                             {% endfor %}
                         {% endfor %}
