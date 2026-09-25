@@ -15,7 +15,7 @@
 5. [Estrutura do Projeto](#5-estrutura-do-projeto)
 6. [Autenticação de Controle de Acesso](#6-autenticação-de-controle-de-acesso)
 7. [Banco de Dados](#7-banco-de-dados)
-8. [Integrações Externas](#8-integrações-externas) # `Ainda não desenvolvido` 
+8. [Integrações Externas](#8-integrações-externas)  **🚧 Em desenvolvimento futuro — funcionalidade ainda não implementada.**
 9. [Processamento de arquivos](#9-processamento-de-arquivos)
 10. [Regras de Negócio](#10-regras-de-negócio)
 11. [Cálculos no processamento](#11-cálculos-no-processamento)

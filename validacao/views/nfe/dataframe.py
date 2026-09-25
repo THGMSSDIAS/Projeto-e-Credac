@@ -80,7 +80,7 @@ class DataFrame(View):
             "  n.codigo_uf AS codigo_uf, "
             "  n.chave_nota AS chave_nota, "
             "  COALESCE(n.tipo_operacao, '') AS tipo_operacao, "
-            "  COALESCE(n.numero_documento, '') AS numero_documento, "
+            "  COALESCE(n.numero_importacao, '') AS numero_importacao, "
             "  pr.codigo_prod AS codigo_prod, "
             "  pr.descricao_prod AS descricao_prod, "
             "  pr.ncm AS ncm, "

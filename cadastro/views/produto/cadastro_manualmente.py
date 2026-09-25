@@ -32,8 +32,9 @@ class CadastroItensManual(View):
                 'redirect_url': reverse('lista_produtos_sped'),
             })
 
+        erro = processamento.get('error')
         return JsonResponse({
             'success': False,
-            'message': processamento.get('error') or 'Erro ao cadastrar produto',
+            'message': str(erro) if erro else 'Erro ao cadastrar produto',
             'redirect_url': reverse('lista_produtos_sped'),
         }, status=400)

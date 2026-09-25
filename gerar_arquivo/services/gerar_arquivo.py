@@ -2,6 +2,7 @@ from tkinter import NONE
 from validacao.models.participantes.participantes import Participantes
 from validacao.models.mercadorias_nfe.produtos import Produtos_notas
 from validacao.models.mercadorias_nfe.notas import Notas_participantes
+from validacao.models.outros_modelos.registroc590 import RegistroEnergiaC590
 from django.http import HttpResponse
 from metodo_rateio.models.sped import (
     ItensProduzidos230,
@@ -12,7 +13,7 @@ from metodo_rateio.models.sped import (
 from validacao.models.painel_controle.validacao import ValidacaoDataConcluida
 from cadastro.models.produtos import Cadastro_itens_sped    
 from cadastro.models.empresa import Empresa
-from typing import Any, Type    
+from typing import Any
 
 import logging
 
@@ -209,6 +210,16 @@ class ArquivoServices:
                                 "quantidade",
                             )
                         )
+
+                    # if self.data_sped and self.empresa_id:
+                    #     self.dadosc590 = list[Any](
+                    #         RegistroEnergiaC590.objects.fitler(
+                    #             mes_referencia=self.mes_sped,
+                    #             empresa_id=self.empresa_id,
+                    #         ).values_list(
+
+                    #         )    
+                    #     )
             return True
 
         except Exception as e:

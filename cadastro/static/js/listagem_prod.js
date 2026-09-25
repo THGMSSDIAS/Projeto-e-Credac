@@ -82,6 +82,11 @@ document.querySelectorAll('.form-produto-sped').forEach(form => {
                 body: formData
             });
 
+            const contentType = response.headers.get('content-type') || '';
+            if (!contentType.includes('application/json')) {
+                throw new Error('Erro ao salvar produto. A resposta do servidor não é válida.');
+            }
+
             const data = await response.json();
 
             if (!data.success) {
@@ -106,7 +111,16 @@ document.querySelectorAll('.form-produto-sped').forEach(form => {
                     document.body.appendChild(toast);
                     const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
                     bsToast.show();
-                    toast.addEventListener('hidden.bs.toast', () => toast.remove());
+                    toast.addEventListener('hidden.bs.toast', () => {
+                        toast.remove();
+                        if (data.redirect_url) {
+                            window.location.href = data.redirect_url;
+                        } else {
+                            window.location.reload();
+                        }
+                    });
+                } else if (data.redirect_url) {
+                    window.location.href = data.redirect_url;
                 }
             }, { once: true });
         } catch (error) {

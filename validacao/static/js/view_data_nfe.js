@@ -266,7 +266,7 @@
             showToast('Data SPED é obrigatória', 'error');
             return;
         }
-        window.location.href = `${urlExportar}?empresa_id=${empresaId}&data_sped=${dataSped}`;
+        window.location.href = `${urlExportar}?empresa_id=${empresaId}&data_sped=${dataSped}&opcs=exportar`;
     };
 
     window.atualizarDados = function () {

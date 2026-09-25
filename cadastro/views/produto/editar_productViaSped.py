@@ -43,12 +43,13 @@ class UpdateProductsViaSped(View):
 
         # Datas
         data_inicio_str = request.POST.get('data_inicio_sped')
+        
         if data_inicio_str:
             try:
                 # Vem no formato dd/mm/YYYY do input
                 produto.data_inicio_sped = datetime.strptime(data_inicio_str, '%d/%m/%Y').date()
+                produto.ano_sped = data_inicio_str[:4]
             except ValueError:
-                # Se der erro, apenas mantém o valor anterior
                 pass
 
         # Campos básicos do cadastro
