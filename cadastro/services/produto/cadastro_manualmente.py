@@ -1,5 +1,4 @@
 from cadastro.models.produtos import Cadastro_itens_sped
-from datetime import datetime
 from cadastro.models.empresa import Empresa
 
 class CadastroManualServices:
@@ -25,11 +24,9 @@ class CadastroManualServices:
                 genero=self.data_job.get('genero'),
                 ncm=self.data_job.get('ncm'),
                 cest=self.data_job.get('cest'),
-                saldo_inicial_produto=self.data_job.get('saldo_inicial_produto'),
-                saldo_final_produto=self.data_job.get('saldo_final_produto'),
             )    
 
             return {'sucess': True}
 
         except Exception as e:
-            return {'sucess': False , 'error': {e}}
+            return {'sucess': False , 'error': {e}}       
