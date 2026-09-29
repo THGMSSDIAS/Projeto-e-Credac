@@ -75,7 +75,6 @@ class XMLProcesses:
         return values
 
 
-    @staticmethod
     def extract_xml_file(file_path: str, extraction_type: str = 'nfe') -> Dict[str, Any]:
             """Processa arquivo NFe (XML). Para cada nota (infNFe) divide os totais da nota igualmente
             entre os itens (det) e retorna a lista de produtos com 'valor_rateado' e 'valor_total'.
